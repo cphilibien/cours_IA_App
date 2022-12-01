@@ -21,9 +21,18 @@ st.set_page_config(
 # $ Titre de l'app
 st.title("Classification binaire du titanic")
 
-# Texte
-st.write("Quelques visualisations des données")
 
+# st.markdown(
+#     "[![Foo](https://upload.wikimedia.org/wikipedia/en/1/18/Titanic_%281997_film%29_poster.png)](http://google.com.au/)"
+# )
+
+st.markdown(
+    '<div style="text-align: center;"><img src="https://upload.wikimedia.org/wikipedia/en/1/18/Titanic_%281997_film%29_poster.png" alt="Italian Trulli"></div>',
+    unsafe_allow_html=True,
+)
+
+st.markdown("")
+st.markdown("")
 
 #### IMPORTATION DES DONNÉES #####
 # wget.download(
@@ -53,41 +62,89 @@ train_data = train_data.dropna()
 train_data["Sex"] = train_data["Sex"].replace("male", 1)
 train_data["Sex"] = train_data["Sex"].replace("female", 0)
 
+# EMBARKED
+train_data["Embarked"] = train_data["Embarked"].replace("C", 0)
+train_data["Embarked"] = train_data["Embarked"].replace("S", 1)
+train_data["Embarked"] = train_data["Embarked"].replace("Q", 2)
+
 # Ici on sépare nos données X (variables prédictives) et y (variables à prédire)
 X = train_data[
-    [
-        "Sex",
-        "Age",
-    ]
+    ["Sex", "Age", "Pclass", "Embarked"]
 ]  # variables prédictives (indépendantes)
 y = train_data["Survived"]  # Variable à prédire (dépendantes)
 
 model = LogisticRegression()  # Importe l'algorithme
 model.fit(X, y)
 
-AGE = st.slider("Age de la personne?", 0, 2, 65)
-SEX = st.radio("Sexe de la personne", ("Homme", "Femme"))
 
-st.write("Cette personne avait ", AGE, "ans et", "était un/une", SEX)
+with st.form("my_form"):
+    # AGE
+    AGE = st.slider("Age de la personne?", 0, 2, 65)
 
-if SEX == "Homme":
-    SEX = 1
-else:
-    SEX = 0
+    st.markdown("")
+    st.markdown("")
 
+    # SEX
+    SEX = st.radio("Sexe de la personne", ("Homme", "Femme"))
 
-pred = model.predict(
-    [[SEX, AGE]]
-)  # On prédit les données de validation (20%) pour tester le modèle
+    st.markdown("")
+    st.markdown("")
 
-if pred == 0:
-    pred = "mort"
-else:
-    pred = "survie"
+    # PCLASS
+    PCLASS = st.selectbox(
+        "Séletionez la classe de la personne", ("Première", "Deuxième", "Troisème")
+    )
 
-st.metric("prediction", pred)
+    # EMBARKED
+    EMBARKED = st.selectbox("Séletionez l'embarcation", ("C", "S", "Q"))
 
-st.write(
-    "See more in our public [GitHub"
-    " repository](https://github.com/streamlit/example-app-time-series-annotation)"
-)
+    st.markdown("")
+    st.markdown("")
+    st.markdown("")
+    st.markdown("")
+    st.markdown("")
+    st.markdown("")
+
+    st.write(
+        "Cette personne avait ",
+        AGE,
+        "ans,",
+        " était un/une",
+        SEX,
+        "et était dans la",
+        PCLASS,
+        "classe",
+    )
+
+    if SEX == "Homme":
+        SEX = 1
+    else:
+        SEX = 0
+
+    if PCLASS == "Première":
+        PCLASS = 1
+    elif PCLASS == "Deuxième":
+        PCLASS = 2
+    else:
+        PCLASS = 3
+
+    if EMBARKED == "C":
+        EMBARKED = 1
+    elif EMBARKED == "S":
+        EMBARKED = 2
+    else:
+        EMBARKED = 3
+
+    # PREDICTIONS 0 ou 1
+    pred = model.predict(
+        [[SEX, AGE, PCLASS, EMBARKED]]
+    )  # On prédit les données de validation (20%) pour tester le modèle
+
+    if pred == 0:
+        pred = "mort"
+    else:
+        pred = "survie"
+
+    st.metric(" ", pred)
+
+    submitted = st.form_submit_button("Prédire")
