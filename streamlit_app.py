@@ -26,14 +26,14 @@ st.write("Quelques visualisations des données")
 
 
 #### IMPORTATION DES DONNÉES #####
-wget.download(
-    "https://raw.githubusercontent.com/iid-ulaval/EEAA-datasets/master/titanic_train.csv",
-    "./titanic_train.csv",
-)
-wget.download(
-    "https://raw.githubusercontent.com/iid-ulaval/EEAA-datasets/master/titanic_test.csv",
-    "./titanic_test.csv",
-)
+# wget.download(
+#     "https://raw.githubusercontent.com/iid-ulaval/EEAA-datasets/master/titanic_train.csv",
+#     "./titanic_train.csv",
+# )
+# wget.download(
+#     "https://raw.githubusercontent.com/iid-ulaval/EEAA-datasets/master/titanic_test.csv",
+#     "./titanic_test.csv",
+# )
 train_data = pd.read_csv("titanic_train.csv")
 test_data = pd.read_csv("titanic_test.csv")
 
