@@ -1,2 +1,8 @@
 vega-datasets
 streamlit
+numpy
+pandas
+seaborn
+matplotlib
+wget
+scikit-learn

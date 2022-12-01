@@ -1,112 +1,91 @@
 import altair as alt
 import pandas as pd
 import streamlit as st
-from vega_datasets import data
+
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+import wget
+import sklearn
+
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score
 
 st.set_page_config(
-    page_title="Time series annotations", page_icon="⬇", layout="centered"
+    page_title="Classification titanic", page_icon="⬇", layout="centered"
 )
 
+# $ Titre de l'app
+st.title("Classification binaire du titanic")
 
-@st.experimental_memo
-def get_data():
-    source = data.stocks()
-    source = source[source.date.gt("2004-01-01")]
-    return source
-
-
-@st.experimental_memo(ttl=60 * 60 * 24)
-def get_chart(data):
-    hover = alt.selection_single(
-        fields=["date"],
-        nearest=True,
-        on="mouseover",
-        empty="none",
-    )
-
-    lines = (
-        alt.Chart(data, height=500, title="Evolution of stock prices")
-        .mark_line()
-        .encode(
-            x=alt.X("date", title="Date"),
-            y=alt.Y("price", title="Price"),
-            color="symbol",
-        )
-    )
-
-    # Draw points on the line, and highlight based on selection
-    points = lines.transform_filter(hover).mark_circle(size=65)
-
-    # Draw a rule at the location of the selection
-    tooltips = (
-        alt.Chart(data)
-        .mark_rule()
-        .encode(
-            x="yearmonthdate(date)",
-            y="price",
-            opacity=alt.condition(hover, alt.value(0.3), alt.value(0)),
-            tooltip=[
-                alt.Tooltip("date", title="Date"),
-                alt.Tooltip("price", title="Price (USD)"),
-            ],
-        )
-        .add_selection(hover)
-    )
-
-    return (lines + points + tooltips).interactive()
+# Texte
+st.write("Quelques visualisations des données")
 
 
-st.title("⬇ Time series annotations")
-
-st.write("Give more context to your time series using annotations!")
-
-col1, col2, col3 = st.columns(3)
-with col1:
-    ticker = st.text_input("Choose a ticker (⬇💬👇ℹ️ ...)", value="⬇")
-with col2:
-    ticker_dx = st.slider(
-        "Horizontal offset", min_value=-30, max_value=30, step=1, value=0
-    )
-with col3:
-    ticker_dy = st.slider(
-        "Vertical offset", min_value=-30, max_value=30, step=1, value=-10
-    )
-
-# Original time series chart. Omitted `get_chart` for clarity
-source = get_data()
-chart = get_chart(source)
-
-# Input annotations
-ANNOTATIONS = [
-    ("Mar 01, 2008", "Pretty good day for GOOG"),
-    ("Dec 01, 2007", "Something's going wrong for GOOG & AAPL"),
-    ("Nov 01, 2008", "Market starts again thanks to..."),
-    ("Dec 01, 2009", "Small crash for GOOG after..."),
-]
-
-# Create a chart with annotations
-annotations_df = pd.DataFrame(ANNOTATIONS, columns=["date", "event"])
-annotations_df.date = pd.to_datetime(annotations_df.date)
-annotations_df["y"] = 0
-annotation_layer = (
-    alt.Chart(annotations_df)
-    .mark_text(
-        size=15, text=ticker, dx=ticker_dx, dy=ticker_dy, align="center"
-    )
-    .encode(
-        x="date:T",
-        y=alt.Y("y:Q"),
-        tooltip=["event"],
-    )
-    .interactive()
+#### IMPORTATION DES DONNÉES #####
+wget.download(
+    "https://raw.githubusercontent.com/iid-ulaval/EEAA-datasets/master/titanic_train.csv",
+    "./titanic_train.csv",
 )
-
-# Display both charts together
-st.altair_chart(
-    (chart + annotation_layer).interactive(), use_container_width=True
+wget.download(
+    "https://raw.githubusercontent.com/iid-ulaval/EEAA-datasets/master/titanic_test.csv",
+    "./titanic_test.csv",
 )
+train_data = pd.read_csv("titanic_train.csv")
+test_data = pd.read_csv("titanic_test.csv")
 
-st.write("## Code")
+#### TEST VIZ ######
+# st.dataframe(train_data.head(20))
+
+# fig = plt.figure(figsize=(10, 4))
+# sns.barplot(x="Pclass", y="Survived", data=train_data)
+# st.pyplot(fig)
+#### TEST VIZ ######
+
+
+# Traitement valeur manquantes
+train_data = train_data.dropna()
+
+# Traitement de la variable Sexe
+train_data["Sex"] = train_data["Sex"].replace("male", 1)
+train_data["Sex"] = train_data["Sex"].replace("female", 0)
+
+# Ici on sépare nos données X (variables prédictives) et y (variables à prédire)
+X = train_data[
+    [
+        "Sex",
+        "Age",
+    ]
+]  # variables prédictives (indépendantes)
+y = train_data["Survived"]  # Variable à prédire (dépendantes)
+
+model = LogisticRegression()  # Importe l'algorithme
+model.fit(X, y)
+
+AGE = st.slider("Age de la personne?", 0, 2, 65)
+SEX = st.radio("Sexe de la personne", ("Homme", "Femme"))
+
+st.write("Cette personne avait ", AGE, "ans et", "était un/une", SEX)
+
+if SEX == "Homme":
+    SEX = 1
+else:
+    SEX = 0
+
+
+pred = model.predict(
+    [[SEX, AGE]]
+)  # On prédit les données de validation (20%) pour tester le modèle
+
+if pred == 0:
+    pred = "mort"
+else:
+    pred = "survie"
+
+st.metric("prediction", pred)
 
 st.write(
     "See more in our public [GitHub"
