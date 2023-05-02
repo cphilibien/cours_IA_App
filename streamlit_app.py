@@ -8,18 +8,21 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import wget
 import sklearn
+import joblib
 
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 
+
+# Configuration Page
 st.set_page_config(
-    page_title="Classification titanic", page_icon="⬇", layout="centered"
+    page_title="Classification titanic", page_icon="🤖", layout="centered"
 )
 
-# $ Titre de l'app
-st.title("Classification binaire du titanic")
+# Titre de l'app
+st.title("Classification binaire du titanic - 2023")
 
 
 # st.markdown(
@@ -43,8 +46,8 @@ st.markdown("")
 #     "https://raw.githubusercontent.com/iid-ulaval/EEAA-datasets/master/titanic_test.csv",
 #     "./titanic_test.csv",
 # )
-train_data = pd.read_csv("titanic_train.csv")
-test_data = pd.read_csv("titanic_test.csv")
+# train_data = pd.read_csv("titanic_train.csv")
+# test_data = pd.read_csv("titanic_test.csv")
 
 #### TEST VIZ ######
 # st.dataframe(train_data.head(20))
@@ -55,48 +58,49 @@ test_data = pd.read_csv("titanic_test.csv")
 #### TEST VIZ ######
 
 
-# Traitement valeur manquantes
-train_data = train_data.dropna()
+# # Traitement valeur manquantes
+# train_data = train_data.dropna()
 
-# Traitement de la variable Sexe
-train_data["Sex"] = train_data["Sex"].replace("male", 1)
-train_data["Sex"] = train_data["Sex"].replace("female", 0)
+# # Traitement de la variable Sexe
+# train_data["Sex"] = train_data["Sex"].replace("male", 1)
+# train_data["Sex"] = train_data["Sex"].replace("female", 0)
 
-# EMBARKED
-train_data["Embarked"] = train_data["Embarked"].replace("C", 0)
-train_data["Embarked"] = train_data["Embarked"].replace("S", 1)
-train_data["Embarked"] = train_data["Embarked"].replace("Q", 2)
+# # EMBARKED
+# train_data["Embarked"] = train_data["Embarked"].replace("C", 0)
+# train_data["Embarked"] = train_data["Embarked"].replace("S", 1)
+# train_data["Embarked"] = train_data["Embarked"].replace("Q", 2)
 
-# Ici on sépare nos données X (variables prédictives) et y (variables à prédire)
-X = train_data[
-    ["Sex", "Age", "Pclass", "Embarked"]
-]  # variables prédictives (indépendantes)
-y = train_data["Survived"]  # Variable à prédire (dépendantes)
+# # Ici on sépare nos données X (variables prédictives) et y (variables à prédire)
+# X = train_data[
+#     ["Sex", "Age", "Pclass", "Embarked"]
+# ]  # variables prédictives (indépendantes)
+# y = train_data["Survived"]  # Variable à prédire (dépendantes)
 
-model = LogisticRegression()  # Importe l'algorithme
-model.fit(X, y)
+# model = LogisticRegression()  # Importe l'algorithme
+# model.fit(X, y)
 
+
+# load the saved model
+model = joblib.load('model_titanic.joblib')
 
 with st.form("my_form"):
-    # AGE
-    AGE = st.slider("Age de la personne?", 0, 2, 65)
+
+    AGE = st.slider("Age de la personne?", 0, 2, 95)
 
     st.markdown("")
     st.markdown("")
 
-    # SEX
     SEX = st.radio("Sexe de la personne", ("Homme", "Femme"))
 
     st.markdown("")
     st.markdown("")
 
-    # PCLASS
     PCLASS = st.selectbox(
         "Séletionez la classe de la personne", ("Première", "Deuxième", "Troisème")
     )
 
     # EMBARKED
-    EMBARKED = st.selectbox("Séletionez l'embarcation", ("C", "S", "Q"))
+    # EMBARKED = st.selectbox("Séletionez l'embarcation", ("C", "S", "Q"))
 
     st.markdown("")
     st.markdown("")
@@ -128,17 +132,17 @@ with st.form("my_form"):
     else:
         PCLASS = 3
 
-    if EMBARKED == "C":
-        EMBARKED = 1
-    elif EMBARKED == "S":
-        EMBARKED = 2
-    else:
-        EMBARKED = 3
+    # if EMBARKED == "C":
+    #     EMBARKED = 1
+    # elif EMBARKED == "S":
+    #     EMBARKED = 2
+    # else:
+    #     EMBARKED = 3
 
     # PREDICTIONS 0 ou 1
     pred = model.predict(
-        [[SEX, AGE, PCLASS, EMBARKED]]
-    )  # On prédit les données de validation (20%) pour tester le modèle
+        [[PCLASS, SEX, AGE]]
+    )
 
     if pred == 0:
         pred = "mort"
@@ -146,5 +150,11 @@ with st.form("my_form"):
         pred = "survie"
 
     st.metric(" ", pred)
+    
+    proba = model.predict_proba([[PCLASS, SEX, AGE]])
+
+    st.write(f"Probabilité de survie : {proba[0][1]*100:.2f}%")
+
+    st.write(f"Probabilité de décès : {proba[0][0]*100:.2f}%")
 
     submitted = st.form_submit_button("Prédire")
